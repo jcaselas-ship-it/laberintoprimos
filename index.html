@@ -9,7 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Primos">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href='data:application/manifest+json,{"name":"Laberinto de primos","short_name":"Primos","display":"standalone","start_url":".","background_color":"%23eaf1fb","theme_color":"%23eaf1fb"}'>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap">
 <style>
 :root{--bg:#eaf1fb;--card:#fbfdff;--ink:#1c2a55;--mute:#5b6b92;--line:#aebfe0;--acc:#2a4bd7;--acc-ink:#fff;--ok:#12805a;--bad:#d8363f;--gold:#c98a00;--path:#ffe66b;--path-ink:#1c2a55;
@@ -610,6 +612,7 @@ bd.addEventListener('pointerup',e=>{
   const dx=e.clientX-sx,dy=e.clientY-sy;
   if(!done&&Math.max(Math.abs(dx),Math.abs(dy))>30){sw=true;move(Math.abs(dx)>Math.abs(dy)?[0,dx>0?1:-1]:[dy>0?1:-1,0])}
 });
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 theme();{const h=readCode(location.hash.slice(1));if(h)startReto(h);else newGame()}
 </script>
 </body>
