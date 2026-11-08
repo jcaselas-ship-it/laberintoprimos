@@ -179,7 +179,7 @@ const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[
 const AB='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let reto=null;
 const mkCode=(l,m,sd)=>AB[l*3+m]+AB[sd>>10&31]+AB[sd>>5&31]+AB[sd&31];
 function readCode(c){
-  c=(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/O/g,'0').replace(/I/g,'1');
+  c=(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(c.length!==4||[...c].some(x=>AB.indexOf(x)<0))return null;
   const i=c.split('').map(x=>AB.indexOf(x)),sd=i[1]<<10|i[2]<<5|i[3];if(i[0]>19)return null;
   /* 1.ª letra 0-14: reto (nivel×3+modo); 15-19: batalla (nivel) */
