@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laberinto de primos</title>
+<meta name="theme-color" content="#eaf1fb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Primos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Laberinto de primos","short_name":"Primos","display":"standalone","start_url":".","background_color":"%23eaf1fb","theme_color":"%23eaf1fb"}'>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap">
+<style>
+:root{--bg:#eaf1fb;--card:#fbfdff;--ink:#1c2a55;--mute:#5b6b92;--line:#aebfe0;--acc:#2a4bd7;--acc-ink:#fff;--ok:#12805a;--bad:#d8363f;--gold:#c98a00;--path:#ffe66b;--path-ink:#1c2a55;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1630;--card:#17224a;--ink:#e9eeff;--mute:#9eb0e0;--line:#33447e;--acc:#8fb0ff;--acc-ink:#0e1630;--ok:#4fd6a0;--bad:#ff7b84;--gold:#ffcf5c;--path:#6e5a12;--path-ink:#fff6d0}}
+:root[data-theme="dark"]{--bg:#0e1630;--card:#17224a;--ink:#e9eeff;--mute:#9eb0e0;--line:#33447e;--acc:#8fb0ff;--acc-ink:#0e1630;--ok:#4fd6a0;--bad:#ff7b84;--gold:#ffcf5c;--path:#6e5a12;--path-ink:#fff6d0}
+*{box-sizing:border-box}
+html,body{margin:0;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
+body{background-color:var(--bg);background-image:linear-gradient(color-mix(in srgb,var(--line) 45%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 45%,transparent) 1px,transparent 1px);background-size:26px 26px;color:var(--ink);font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif;min-height:100vh}
+main{max-width:760px;margin:0 auto;padding:12px 12px 28px;text-align:center}
+h1{font-size:clamp(1.6rem,6vw,2.2rem);margin:2px 0;font-weight:700}
+.intro{margin:0 auto 8px;max-width:48ch;color:var(--mute);line-height:1.35}
+button,select,input{font-family:inherit;color:var(--ink)}
+select,input{font-size:1rem;min-height:40px;background:var(--card);border:2px solid var(--line);border-radius:8px;padding:3px 6px}
+input{width:64px}
+.row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:6px 0;font-weight:700}
+.lv button{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:4px 9px;min-height:44px;font-size:.95rem;font-weight:700;cursor:pointer;line-height:1.1;touch-action:manipulation}
+.lv button small{display:block;font-weight:500;color:var(--mute);font-size:.68rem}
+.lv button:disabled{opacity:.5;cursor:not-allowed}
+.lv button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.lv button[aria-pressed="true"] small{color:var(--acc-ink)}
+.row span{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:3px 10px;min-width:92px}
+.act{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:5px 12px;min-height:44px;font-size:.95rem;font-weight:700;cursor:pointer;touch-action:manipulation}
+.act:disabled{opacity:.45}
+.board{--w:min(96vw,60vh,720px);width:var(--w);height:var(--w);display:grid;grid-template-columns:repeat(var(--n),1fr);gap:max(2px,calc(var(--w)/var(--n)*.035));margin:8px auto 6px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cell{position:relative;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:700 calc(var(--w)/var(--n)*.38) Fredoka,"Trebuchet MS",system-ui,sans-serif;padding:0;cursor:pointer;transition:background .15s}
+.big .cell{font-size:calc(var(--w)/var(--n)*.52)}
+.cell:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.cell.vis{background:var(--path);color:var(--path-ink);border-color:var(--gold)}
+.cell.cur{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 35%,transparent)}
+.cell.start{border-width:3px;border-color:var(--ok)}
+.cell.end{border-width:3px;border-color:var(--gold)}
+.cell::before{position:absolute;top:1px;left:4px;font-size:.42em;line-height:1.2}
+.start::before{content:"▶";color:var(--ok)}
+.end::before{content:"★";color:var(--gold)}
+.cell.cur.start::before{color:var(--acc-ink)}
+.cell.bad{animation:sh .4s;background:color-mix(in srgb,var(--bad) 28%,var(--card));border-color:var(--bad)}
+.cell.hint,.cell.sol{outline:4px solid var(--ok);outline-offset:-3px}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.msg{min-height:3em;font-weight:500;font-size:1.05rem;line-height:1.35;margin:4px auto;max-width:46ch}
+.big .msg{font-size:1.3rem}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+#cheat{margin:6px auto;max-width:48ch;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 12px;line-height:1.7;word-spacing:.2em}
+#cheat[hidden]{display:none}
+details{margin:8px auto 0;max-width:48ch;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:6px 12px}
+summary{cursor:pointer;font-weight:700}
+.ov{position:fixed;inset:0;background:rgba(10,15,40,.6);display:flex;padding:16px;z-index:20;overflow:auto}
+.ov[hidden]{display:none}
+.ov div{background:var(--card);border:3px solid var(--ink);border-radius:16px;padding:20px 24px;max-width:360px;width:100%;margin:auto}
+.ov h2{margin:0 0 4px;font-size:1.6rem}
+#stars{font-size:2.5rem;color:var(--gold);letter-spacing:.1em;line-height:1.2}
+#res{margin:4px 0}
+#cbig{font-size:clamp(3rem,16vw,5rem);font-weight:700;letter-spacing:.12em;color:var(--acc);margin:6px 0}
+#clink{color:var(--mute);font-size:.85rem;overflow-wrap:anywhere}
+#codeIn{width:96px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;text-align:center}
+#retoC{color:var(--acc)}
+#bbig{font-size:clamp(2.6rem,14vw,4.5rem);font-weight:700;letter-spacing:.1em;color:var(--acc);margin:6px 0;border:0;padding:0}
+#btx{overflow-wrap:anywhere}
+.bat.r .cell.cur{background:var(--bad);border-color:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 35%,transparent)}
+.bat.r .cell.start{border-color:var(--bad)}.bat.r .start::before{color:var(--bad)}
+.cell.rst{border-width:3px;border-color:var(--bad)}.rst::before{content:"●";color:var(--bad)}
+.bat.r .cell.rst{border-color:var(--acc)}.bat.r .rst::before{color:var(--acc)}
+.cell.rv:not(.vis):not(.cur){background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+.bat.r .cell.rv:not(.vis):not(.cur){background:color-mix(in srgb,var(--acc) 15%,var(--card))}
+.cell.riv{box-shadow:inset 0 0 0 4px var(--bad)}.bat.r .cell.riv{box-shadow:inset 0 0 0 4px var(--acc)}
+.cell.cur.riv{box-shadow:inset 0 0 0 4px var(--card)}
+.board.frz{filter:grayscale(.8);opacity:.55;transition:opacity .2s}
+#route{color:var(--mute);font-size:.85rem;margin:0 0 12px;overflow-wrap:anywhere}
+.ov .act{margin:4px}
+.ov .main{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.cf{position:fixed;top:-30px;z-index:30;pointer-events:none;font-style:normal;animation:fall 2s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+@media (max-width:380px){select{font-size:.88rem;padding:3px 2px}}
+@media (max-width:480px){main{padding:8px 6px 20px}h1{font-size:1.45rem}.board{--w:min(97vw,64vh,720px)}.row{gap:6px;margin:4px 0}.row span{min-width:0;padding:3px 8px}}
+@media (min-width:768px){.act{font-size:1.05rem}.msg{font-size:1.2rem}}
+.top{position:relative;display:flex;justify-content:center;align-items:center;padding:0 52px;min-height:48px;margin-bottom:8px}
+.ic{position:static;min-width:44px;padding:5px 8px;font-size:1.2rem;line-height:1}
+.top .ic{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+#hint{min-width:64px}
+.drw{position:fixed;inset:0;background:rgba(10,15,40,.5);z-index:15;display:flex;justify-content:flex-end}
+.drw[hidden]{display:none}
+.drw nav{background:var(--bg);width:min(330px,88vw);height:100%;overflow:auto;padding:max(12px,env(safe-area-inset-top)) 14px 20px;border-left:3px solid var(--ink);display:flex;flex-direction:column;gap:8px;text-align:left;animation:sl .2s ease-out}
+@keyframes sl{from{transform:translateX(100%)}}
+.drw .row.sp{justify-content:space-between;margin:0}
+.drw .wide{width:100%;text-align:left}
+.drw details{margin:0;max-width:none}
+.drw .intro{margin:6px 0 2px;max-width:none;text-align:left}
+.drw .row{justify-content:flex-start}
+@media (orientation:landscape) and (min-width:560px){main{max-width:1100px;display:grid;grid-template-columns:auto 1fr;column-gap:20px;align-items:start}main>*{grid-column:2}main>.board{grid-column:1;grid-row:1/span 12;position:sticky;top:8px;--w:min(calc(100vh - 32px),58vw,760px);margin:8px 0}}
+@media (orientation:landscape) and (max-height:500px){main{padding:6px 10px}h1{font-size:1.3rem}.row{margin:4px 0;gap:6px}.msg{min-height:2.7em;font-size:.95rem;margin:2px auto}.act{min-height:40px}select{min-height:36px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><h1>Laberinto de primos</h1><button class="act ic" id="menuB" aria-label="Menú" aria-expanded="false" aria-controls="menu">☰</button></header>
+<div class="row">
+<select id="lvs" aria-label="Nivel"></select>
+<select id="mode" aria-label="Modo"><option value="0">Normal</option><option value="1">❤️ Con vidas</option><option value="2">⏱ Contrarreloj</option></select>
+</div>
+<div class="row"><span id="retoC" hidden></span><span id="time">⏱ 0:00</span><span id="errs"></span></div>
+<div class="board" id="board" role="grid" aria-label="Laberinto de números"></div>
+<div class="msg" id="msg" role="status" aria-live="polite"></div>
+<div class="row">
+<button class="act" id="hint"></button>
+<button class="act" id="undo">↩ Atrás</button>
+<button class="act" id="reset">Empezar de nuevo</button>
+</div>
+<div id="cheat" hidden></div>
+</main>
+<div class="drw" id="menu" hidden>
+<nav aria-label="Menú">
+<div class="row sp"><b>Menú</b><button class="act ic" id="menuX" aria-label="Cerrar menú">✕</button></div>
+<button class="act wide" id="fresh">🔀 Otro laberinto</button>
+<button class="act wide" id="help">📋 Ver primos</button>
+<details><summary>🏁 Reto con código</summary><p class="intro">Todos juegan el mismo laberinto. El profe elige nivel y modo y pulsa «Crear reto»; los alumnos escriben el código.</p>
+<div class="row"><button class="act" id="mkR">Crear reto</button></div>
+<div class="row"><input id="codeIn" maxlength="4" placeholder="K7P2" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Código del reto"><button class="act" id="joinR">Unirse</button></div></details>
+<details><summary>⚔️ Batalla (2 jugadores)</summary><p class="intro">Cada uno en su móvil o tablet. Uno crea la batalla y el otro se une con el código. Salís de esquinas opuestas y gana quien llegue antes al centro ★. Pisar un número que no es primo te congela 2 segundos.</p>
+<div class="row"><button class="act" id="mkB">Crear batalla</button></div>
+<div class="row"><input id="codeB" maxlength="4" placeholder="K7P2" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Código de la batalla"><button class="act" id="joinB">Unirse</button></div></details>
+<details><summary>¿Cómo se juega?</summary><p class="intro">Ve de la salida ▶ a la meta ★ pisando solo números primos. Toca una casilla vecina, desliza el dedo o usa las flechas. Para volver, toca la casilla anterior o ↩ Atrás.</p></details>
+<div class="row">
+<button class="act" id="snd" aria-label="Sonido">🔊</button>
+<button class="act" id="th"></button>
+<button class="act" id="bigb" aria-label="Letra grande">Aa</button>
+</div>
+<details><summary>Modo profe</summary>
+<div class="row"><label>Tamaño <input type="number" id="pn" min="4" max="10" value="6"></label>
+<label>Números hasta <input type="number" id="pm" min="20" max="300" value="60"></label>
+<button class="act" id="pgo">Jugar</button></div>
+<div class="row"><button class="act" id="wipe">🗑 Borrar progreso</button></div>
+</details>
+</nav>
+</div>
+<div class="ov" id="cov" hidden><div role="dialog" aria-modal="true" aria-labelledby="ct">
+<h2 id="ct">Reto creado</h2><div id="cbig"></div>
+<p>Los alumnos: ☰ Menú → 🏁 Reto con código → escriben el código y pulsan «Unirse».</p><p id="clink"></p>
+<button class="act main" id="cgo">¡A jugar!</button></div></div>
+<div class="ov" id="bov" hidden><div role="dialog" aria-modal="true" aria-labelledby="bt">
+<h2 id="bt"></h2><div id="bbig"></div><p id="btx"></p>
+<button class="act main" id="bgo"></button><button class="act main" id="brev">⚔️ Revancha</button><button class="act" id="bx">Salir</button></div></div>
+<div class="ov" id="ov" hidden>
+<div role="dialog" aria-modal="true" aria-labelledby="ot">
+<h2 id="ot"></h2>
+<div id="stars"></div>
+<p id="res"></p>
+<p id="route"></p>
+<button class="act main" id="next">Siguiente nivel</button>
+<button class="act" id="rep">Repetir este</button>
+<button class="act" id="again">Otro laberinto</button>
+<button class="act" id="look">Ver el camino</button>
+</div>
+</div>
+<script>
+const LV=[{n:5,max:30,ln:.4,bi:.5,tr:.3,dc:.15},{n:6,max:60,ln:.38,bi:.4,tr:.5,dc:.2},{n:7,max:100,ln:.38,bi:.3,tr:.6,dc:.25},{n:8,max:150,ln:.4,bi:.2,tr:.7,dc:.3},{n:9,max:200,ln:.42,bi:.1,tr:.8,dc:.35},{n:6,max:60,ln:.38,bi:.4,tr:.5,dc:.2}];
+const isP=x=>{if(x<2)return false;for(let d=2;d*d<=x;d++)if(x%d===0)return false;return true};
+const SC=[262,294,330,392,440,523,587,659,784,880];
+const $=id=>document.getElementById(id),bd=$('board'),R=a=>a[Math.floor(rnd()*a.length)];
+let rnd=Math.random;
+const m32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+/* Reto con código: 1.ª letra = nivel y modo, 3 siguientes = semilla */
+const AB='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let reto=null;
+const mkCode=(l,m,sd)=>AB[l*3+m]+AB[sd>>10&31]+AB[sd>>5&31]+AB[sd&31];
+function readCode(c){
+  c=(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/O/g,'0').replace(/I/g,'1');
+  if(c.length!==4||[...c].some(x=>AB.indexOf(x)<0))return null;
+  const i=c.split('').map(x=>AB.indexOf(x)),sd=i[1]<<10|i[2]<<5|i[3];if(i[0]>19)return null;
+  /* 1.ª letra 0-14: reto (nivel×3+modo); 15-19: batalla (nivel) */
+  return i[0]>14?{code:c,kind:'b',lv:i[0]-15,seed:sd}:{code:c,kind:'r',lv:Math.floor(i[0]/3),mode:i[0]%3,seed:sd};
+}
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+let S={bs:{},bt:{},snd:1,th:0,big:0};
+try{Object.assign(S,JSON.parse(localStorage.getItem('lp2')||'{}'))}catch(e){}
+const sv=()=>{try{localStorage.setItem('lp2',JSON.stringify(S))}catch(e){}};
+let B=null,N=5,lv=0,mode=0,g=[],sol=[],path=[],errs=0,hints=0,lives=3,streak=0,bad=new Set(),lim=0,el=0,t0=0,timer=null,done=false,ac=null;
+
+function tn(f,d=.15,ty='sine',at=0){
+  if(!S.snd)return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
+    const t=ac.currentTime+at,o=ac.createOscillator(),k=ac.createGain();
+    o.type=ty;o.frequency.value=f;k.gain.setValueAtTime(.06,t);k.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(k);k.connect(ac.destination);o.start(t);o.stop(t+d);}catch(e){}
+}
+function conf(){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  for(let i=0;i<36;i++){const s=document.createElement('i');s.className='cf';s.textContent=R(['⭐','🎉','🔷','✨']);
+    s.style.cssText='left:'+Math.random()*100+'vw;animation-delay:'+Math.random()*.6+'s;font-size:'+(16+Math.random()*16)+'px';
+    document.body.appendChild(s);setTimeout(()=>s.remove(),2800)}
+}
+
+/* Camino sin roces: ninguna casilla del camino toca a otra que no sea su vecina en el camino */
+function mkPath(n,bi,minL){
+  const maxL=Math.round(n*n*.7);
+  const nbs=(r,c)=>[[1,0],[-1,0],[0,1],[0,-1]].map(([x,y])=>[r+x,c+y]).filter(([a,b])=>a>=0&&b>=0&&a<n&&b<n);
+  for(let t=0;t<40;t++){
+    const p=[[0,0]],on=new Set([0]);let steps=0;
+    const dfs=(r,c)=>{
+      if(++steps>3000)return false;
+      if(r===n-1&&c===n-1)return p.length>=minL&&p.length<=maxL;
+      const nb=nbs(r,c).filter(([a,b])=>!on.has(a*n+b)&&nbs(a,b).filter(([x,y])=>on.has(x*n+y)).length===1);
+      shuf(nb);
+      if(rnd()<bi)nb.sort((x,y)=>(x[0]+x[1])-(y[0]+y[1])).reverse();
+      for(const [a,b] of nb){on.add(a*n+b);p.push([a,b]);if(dfs(a,b))return true;p.pop();on.delete(a*n+b)}
+      return false;
+    };
+    if(dfs(0,0))return p;
+  }
+  return null;
+}
+function gen(){
+  rnd=reto?m32(reto.seed*7919+1):Math.random;
+  const {n,max,ln,bi,tr,dc}=LV[lv],G=[],B=[],CO=[],TR=[];
+  for(let i=1;i<=max;i++){if(isP(i))G.push(i);else{B.push(i);if(i%2&&i>1){CO.push(i);if(i%3&&i%5)TR.push(i)}}}
+  sol=mkPath(n,bi,Math.max(2*n-1,Math.round(n*n*ln)))||[...Array(n)].map((_,i)=>[0,i]).concat([...Array(n-1)].map((_,i)=>[i+1,n-1]));
+  const on=new Set(sol.map(([r,c])=>r*n+c)),rest=[];
+  g=Array.from({length:n},()=>Array(n).fill(0));
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(on.has(r*n+c))g[r][c]=R(G);else rest.push([r,c])}
+  shuf(rest);
+  const pr=(a,b)=>a>=0&&b>=0&&a<n&&b<n&&g[a][b]>0&&isP(g[a][b]);
+  /* Primos señuelo: solo callejones sin salida, así la solución es única */
+  rest.forEach(([r,c])=>{
+    const k=[[1,0],[-1,0],[0,1],[0,-1]].filter(([x,y])=>pr(r+x,c+y)).length;
+    g[r][c]=k<=1&&rnd()<dc?R(G):(TR.length&&rnd()<tr?R(TR):(rnd()<.7?R(CO):R(B)));
+  });
+  rnd=Math.random;
+}
+
+function why(v){
+  if(v===1)return '1 no es primo: solo tiene un divisor, él mismo.';
+  for(let d=2;d*d<=v;d++)if(v%d===0){
+    const f=' ('+v+' = '+d+' × '+(v/d)+').',u=v%10;
+    if(d===2)return v+' no es primo: es par (acaba en '+u+'), así que se divide entre 2'+f;
+    if(d===3)return v+' no es primo: sus cifras suman '+String(v).split('').reduce((a,b)=>a+ +b,0)+', así que se divide entre 3'+f;
+    if(d===5)return v+' no es primo: acaba en 5, así que se divide entre 5'+f;
+    return '¡Cuidado, parecía primo! '+v+' se divide entre '+d+f;
+  }
+  return '';
+}
+function say(t,cls){const m=$('msg');m.textContent=t;m.className='msg '+(cls||'')}
+function cell(r,c){return bd.children[r*N+c]}
+function stats(){
+  $('errs').textContent=mode===1?'❤️'.repeat(lives)+'🖤'.repeat(3-lives):'✗ '+errs+(errs===1?' error':' errores');
+  $('hint').textContent='💡 '+(3-hints);$('hint').setAttribute('aria-label','Pista, quedan '+(3-hints));
+  $('undo').disabled=done||path.length<2;
+  $('time').hidden=mode===1;
+}
+function tick(){
+  el=Math.floor((Date.now()-t0)/1000);
+  $('time').textContent='⏱ '+fmt(mode===2?Math.max(0,lim-el):el);
+  if(mode===2&&!done&&el>=lim)lose('¡Se acabó el tiempo! Este era el camino.');
+}
+function draw(){
+  const n=N,is=(p,r,c)=>p[0]===r&&p[1]===c;
+  bd.style.setProperty('--n',n);bd.innerHTML='';
+  g.forEach((row,r)=>row.forEach((v,c)=>{
+    const b=document.createElement('button');
+    b.dataset.k=B?(is(B.st[B.role],r,c)?' start':'')+(is(B.st[1-B.role],r,c)?' rst':'')+(is(B.c,r,c)?' end':'')
+      :(r===0&&c===0?' start':'')+(r===n-1&&c===n-1?' end':'');
+    b.textContent=v;b.onclick=()=>{if(sw){sw=false;return}step(r,c)};bd.appendChild(b);
+  }));
+  mark();
+}
+function mark(){
+  [...bd.children].forEach(b=>b.className='cell'+b.dataset.k);
+  path.forEach(([r,c],i)=>cell(r,c).classList.add(i===path.length-1?'cur':'vis'));
+  if(B)B.riv.forEach(([r,c],i)=>cell(r,c).classList.add(i===B.riv.length-1?'riv':'rv'));
+}
+
+function step(r,c){
+  if(done)return;
+  if(B&&Date.now()<B.frz){say('¡Congelado! Espera un momento…','bad');return}
+  const n=N,[pr,pc]=path[path.length-1];
+  if(path.length>1){const [br,bc]=path[path.length-2];
+    if(br===r&&bc===c){undo();return}}
+  if(Math.abs(pr-r)+Math.abs(pc-c)!==1){say('Solo puedes ir a una casilla vecina: arriba, abajo, izquierda o derecha.');return}
+  if(path.some(([a,b])=>a===r&&b===c)){say('Ya has pasado por esa casilla.');return}
+  const v=g[r][c],b=cell(r,c),k=r*n+c;
+  if(!isP(v)){
+    errs++;streak=0;
+    if(B){B.frz=Date.now()+2000;bd.classList.add('frz');setTimeout(()=>bd.classList.remove('frz'),2000);
+      stats();b.classList.add('bad');setTimeout(()=>b.classList.remove('bad'),500);
+      say(why(v)+' ❄️ Congelado 2 s.','bad');tn(150,.3,'triangle');tn(110,.3,'triangle',.12);
+      if(navigator.vibrate)navigator.vibrate(200);return}
+    if(mode===1&&!bad.has(k)){bad.add(k);lives--}
+    stats();b.classList.add('bad');setTimeout(()=>b.classList.remove('bad'),500);
+    say(why(v),'bad');tn(150,.3,'triangle');tn(110,.3,'triangle',.12);
+    if(navigator.vibrate)navigator.vibrate(120);
+    if(mode===1&&lives<=0)lose('Te quedaste sin vidas. Este era el camino.');
+    return;
+  }
+  path.push([r,c]);streak++;mark();stats();tn(SC[(path.length-2)%SC.length]);
+  let t=v+' es primo. ¡Sigue!';
+  if(mode===1&&streak%10===0&&lives<3){lives++;stats();t+=' ¡Vida extra!'}
+  say(t,'ok');bSend({t:'pos',p:path});
+  if(B?(r===B.c[0]&&c===B.c[1]):(r===n-1&&c===n-1))B?bArrive():win();
+}
+
+function undo(){
+  if(done||path.length<2)return;
+  path.pop();streak=0;tn(220,.1);mark();stats();say('Has vuelto un paso atrás.');bSend({t:'pos',p:path});
+}
+function hint(){
+  if(done)return;
+  if(hints>=3){say('Ya usaste las 3 pistas.');return}
+  /* La solución es única: el camino del jugador coincide con ella hasta la casilla j */
+  let j=0;while(j+1<path.length&&j+1<sol.length&&path[j+1][0]===sol[j+1][0]&&path[j+1][1]===sol[j+1][1])j++;
+  const back=j<path.length-1,[hr,hc]=back?sol[j]:sol[j+1];
+  hints++;stats();
+  const h=cell(hr,hc);h.classList.add('hint');setTimeout(()=>h.classList.remove('hint'),2200);
+  say(back?'Estás en un callejón sin salida: vuelve atrás hasta la casilla marcada en verde.':'La siguiente casilla correcta está marcada en verde.');
+}
+
+function win(){
+  done=true;clearInterval(timer);tick();awake(false);
+  const e=errs+hints,s=e<=1?3:e<=4?2:1;
+  if(lv<5){S.bs[lv]=Math.max(S.bs[lv]||0,s);S.bt[lv]=Math.min(S.bt[lv]||1e9,el);sv()}
+  $('ot').textContent='¡Lo conseguiste!';$('stars').textContent='★'.repeat(s)+'☆'.repeat(3-s);
+  $('res').textContent=mode===1?(lives===3?'¡Sin perder ninguna vida!':'Te quedaron '+lives+(lives===1?' vida.':' vidas.')):'Tiempo '+fmt(el)+', '+errs+(errs===1?' error':' errores')+(lv<5?'. Mejor tiempo: '+fmt(S.bt[lv]):'');
+  $('route').textContent='Tu camino: '+path.map(([r,c])=>g[r][c]).join(', ')+'. Recuerda: el 2 es el único primo par.';
+  if(reto)$('res').textContent='Reto '+reto.code+' · '+$('res').textContent.replace(/\. Mejor tiempo.*/,'');
+  $('next').hidden=lv>=4||!!reto;$('look').hidden=true;
+  stats();renderLv();
+  [523,659,784,1047].forEach((f,i)=>tn(f,.3,'sine',i*.13));conf();
+  openOv();say('¡Meta alcanzada!','ok');
+}
+function lose(t){
+  done=true;clearInterval(timer);awake(false);
+  sol.forEach(([r,c])=>cell(r,c).classList.add('sol'));stats();
+  tn(220,.3,'triangle');tn(165,.4,'triangle',.2);
+  say(t,'bad');$('ot').textContent='¡Casi!';$('stars').textContent='';
+  $('res').textContent=t;$('route').textContent='';$('next').hidden=true;$('look').hidden=false;openOv();
+}
+function openOv(){
+  $('ov').hidden=false;
+  const f=[$('next'),$('rep')].find(b=>!b.hidden);setTimeout(()=>f.focus(),50);
+}
+
+function renderLv(){
+  $('lvs').innerHTML=LV.map((L,i)=>{
+    const lk=i>0&&i<5&&!S.bs[i-1];
+    return '<option value="'+i+'"'+(lk?' disabled':'')+(i===lv?' selected':'')+'>'+(lk?'🔒 ':'')+(i<5?'Nivel '+(i+1):'Libre')+' · hasta '+L.max+(i<5&&S.bs[i]?' '+'★'.repeat(S.bs[i]):'')+'</option>';
+  }).join('');
+}
+
+function newGame(regen=true){
+  mode=B?0:+$('mode').value;
+  if(!reto&&!B&&lv>0&&lv<5&&!S.bs[lv-1])lv=0;
+  N=B?B.n:LV[lv].n;
+  $('retoC').hidden=!reto&&!B;
+  if(reto)$('retoC').textContent='🏁 '+reto.code;
+  if(B)$('retoC').textContent='⚔️ '+B.code+(B.role?' · 🔴 Rojo':' · 🔵 Azul');
+  $('hint').hidden=$('reset').hidden=!!B;
+  bd.classList.toggle('bat',!!B);bd.classList.toggle('r',!!B&&B.role===1);bd.classList.remove('frz');
+  awake(true);
+  if(regen)B?genB():gen();
+  /* Contrarreloj: 3 s por casilla del camino + 15 s de margen, redondeado a 5 s */
+  lim=Math.round((sol.length*3+15)/5)*5;
+  path=[B?B.st[B.role]:[0,0]];if(B){B.riv=[B.st[1-B.role]];B.my=B.rv=null;B.frz=0;B.live=false}
+  errs=0;hints=0;lives=3;streak=0;bad=new Set();done=false;
+  t0=Date.now();clearInterval(timer);timer=setInterval(tick,1000);
+  $('ov').hidden=true;
+  const ns=[];for(let i=2;i<=LV[lv].max;i++)if(isP(i))ns.push(i);
+  $('cheat').textContent=ns.join('  ')+'   (el 1 no es primo)';
+  if(B){done=true;clearInterval(timer)}
+  draw();stats();tick();renderLv();
+  if(B)say('Llega al centro ★ antes que tu rival.');else say(mode===1?'Tienes 3 vidas. Toca una casilla vecina.':mode===2?'Tienes '+fmt(lim)+' para llegar a la meta.':'Toca una casilla vecina que tenga un número primo.');
+}
+let wl=null;
+async function awake(on){
+  try{
+    if(on&&!wl&&'wakeLock' in navigator&&document.visibilityState==='visible'){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}
+    else if(!on&&wl){const w=wl;wl=null;await w.release()}
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!done)awake(true)});
+function startReto(r,show){
+  if(!r){menu(false);say('Ese código no es válido. Son 4 letras o números, por ejemplo K7P2.','bad');return}
+  if(r.kind==='b'){bJoin(r);return}
+  bLeave();reto=r;lv=r.lv;$('mode').value=r.mode;menu(false);newGame();
+  if(show){$('cbig').textContent=r.code;
+    const u=location.protocol.startsWith('http')?location.href.split('#')[0]+'#'+r.code:'';
+    $('clink').textContent=u?'O comparte este enlace: '+u:'';$('cov').hidden=false;setTimeout(()=>$('cgo').focus(),50)}
+  else say('Reto '+r.code+': todos tenéis el mismo laberinto. ¡Suerte!','ok');
+}
+/* ================= BATALLA (2 jugadores) ================= */
+const PJ='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+const loadPJ=()=>window.Peer?Promise.resolve():new Promise((ok,ko)=>{const s=document.createElement('script');s.src=PJ;s.onload=ok;s.onerror=ko;document.head.appendChild(s)});
+const bSize=l=>LV[l].n%2?LV[l].n:LV[l].n+1;
+const bName=r=>r?'🔴 Rojo':'🔵 Azul';
+function mkPathG(n,s,e,minL,maxL,bi,ix){
+  const nbs=(r,c)=>[[1,0],[-1,0],[0,1],[0,-1]].map(([x,y])=>[r+x,c+y]).filter(([a,b])=>a>=0&&b>=0&&a<n&&b<n);
+  const md=([a,b])=>Math.abs(a-e[0])+Math.abs(b-e[1]);
+  /* El 2.º camino solo puede tocar o cruzar el 1.º en el mismo paso (±1): así no hay atajos */
+  const okX=(a,b,i)=>{if(!ix)return true;const k=a*n+b;if(ix.has(k)&&ix.get(k)!==i)return false;
+    return nbs(a,b).every(([x,y])=>!ix.has(x*n+y)||Math.abs(ix.get(x*n+y)-i)<=1)};
+  for(let t=0;t<25;t++){
+    const p=[s],on=new Set([s[0]*n+s[1]]);let steps=0;
+    const dfs=(r,c)=>{
+      if(++steps>2500)return false;
+      if(r===e[0]&&c===e[1])return p.length>=minL;
+      if(p.length+md([r,c])>maxL)return false;
+      const i=p.length,nb=shuf(nbs(r,c).filter(([a,b])=>!on.has(a*n+b)&&nbs(a,b).filter(([x,y])=>on.has(x*n+y)).length===1&&okX(a,b,i)));
+      if(rnd()<bi)nb.sort((x,y)=>md(x)-md(y));
+      for(const [a,b] of nb){on.add(a*n+b);p.push([a,b]);if(dfs(a,b))return true;p.pop();on.delete(a*n+b)}
+      return false;
+    };
+    if(dfs(s[0],s[1]))return p;
+  }
+  return null;
+}
+function bDist(P,s,e,n){
+  const q=[s],d={[s[0]*n+s[1]]:0};
+  while(q.length){const [r,c]=q.shift();if(r===e[0]&&c===e[1])return d[r*n+c];
+    for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=r+x,b=c+y,k=a*n+b;
+      if(a<0||b<0||a>=n||b>=n||!P.has(k)||d[k]!==undefined)continue;d[k]=d[r*n+c]+1;q.push([a,b])}}
+  return -1;
+}
+function genB(){
+  const {max,tr,dc}=LV[B.lv],n=B.n,m=(n-1)/2,c=[m,m],G=[],BB=[],CO=[],TR=[];
+  for(let i=1;i<=max;i++){if(isP(i))G.push(i);else{BB.push(i);if(i%2&&i>1){CO.push(i);if(i%3&&i%5)TR.push(i)}}}
+  rnd=m32(B.seed*7919+B.round*104729+3);
+  const minL=Math.max(n+2,Math.round(n*n*.26)),maxL=Math.round(n*n*.36);
+  let A=null,Q=null;
+  for(let t=0;t<30&&!Q;t++){
+    A=mkPathG(n,[0,0],c,minL,maxL,.3);if(!A)continue;
+    const ix=new Map(A.map(([r,q],i)=>[r*n+q,i])),P=mkPathG(n,[n-1,n-1],c,A.length,A.length,.3,ix);if(!P)continue;
+    const U=new Set([...A,...P].map(([r,q])=>r*n+q));
+    if(bDist(U,[0,0],c,n)===A.length-1&&bDist(U,[n-1,n-1],c,n)===A.length-1)Q=P;
+  }
+  if(!Q){A=[...Array(m+1)].map((_,i)=>[0,i]).concat([...Array(m)].map((_,i)=>[i+1,m]));Q=A.map(([r,q])=>[n-1-r,n-1-q])}
+  const on=new Set([...A,...Q].map(([r,q])=>r*n+q)),rest=[];
+  g=Array.from({length:n},()=>Array(n).fill(0));
+  for(let r=0;r<n;r++)for(let q=0;q<n;q++){if(on.has(r*n+q))g[r][q]=R(G);else rest.push([r,q])}
+  shuf(rest);
+  const pr=(a,b)=>a>=0&&b>=0&&a<n&&b<n&&g[a][b]>0&&isP(g[a][b]);
+  rest.forEach(([r,q])=>{
+    const k=[[1,0],[-1,0],[0,1],[0,-1]].filter(([x,y])=>pr(r+x,q+y)).length;
+    g[r][q]=k<=1&&rnd()<dc?R(G):(TR.length&&rnd()<tr?R(TR):(rnd()<.7?R(CO):R(BB)));
+  });
+  B.sols=[A,Q];sol=B.sols[B.role];rnd=Math.random;
+}
+function bOv(t,big,txt,o={}){
+  $('bt').textContent=t;$('bbig').textContent=big;$('btx').textContent=txt;
+  $('bgo').hidden=!o.go;if(o.go)$('bgo').textContent=o.go;$('brev').hidden=!o.rev;$('bx').hidden=!o.x;
+  $('bov').hidden=false;const f=[$('bgo'),$('brev'),$('bx')].find(b=>!b.hidden);if(f)setTimeout(()=>f.focus(),50);
+}
+const bLink=()=>location.protocol.startsWith('http')?' Enlace: '+location.href.split('#')[0]+'#'+B.code:'';
+function bSend(o){try{if(B&&B.conn&&B.online)B.conn.send(o)}catch(e){}}
+function bWire(cn){
+  B.conn=cn;
+  cn.on('data',bRecv);
+  cn.on('close',()=>{if(B&&B.conn===cn){B.online=false;B.conn=null;
+    if(B.live)say('Tu rival se ha desconectado. Puedes terminar igualmente.','bad');
+    else if(B.my==null&&B.rv==null&&!$('bov').hidden&&$('bgo').hidden)bNet('Se perdió la conexión.')}});
+}
+function bRecv(d){
+  if(!B||!d)return;
+  if(d.t==='go'){B.round=d.round;newGame();bCount()}
+  else if(d.t==='pos'){B.riv=d.p;mark()}
+  else if(d.t==='win'){B.rv=d.ms;bResult()}
+  else if(d.t==='bye'){B.online=false;if(B.live)say('Tu rival ha salido de la batalla.','bad')}
+}
+function bNet(msg){
+  if(!B||B.online)return;
+  bOv('Sin conexión',B.code,(msg||'No se pudo conectar.')+' Podéis jugar igual: contad 3-2-1 juntos y pulsad «¡Empezar!». El primero que llegue al centro, ¡que levante el móvil!',{go:'¡Empezar!',x:true});
+}
+function bCount(){
+  clearInterval(B.cd);done=true;let k=3;
+  bOv('¡Preparados!','3','Llega al centro ★ antes que tu rival. Eres '+bName(B.role)+'.');tn(440);
+  B.cd=setInterval(()=>{k--;
+    if(k>0){$('bbig').textContent=k;tn(440)}
+    else{clearInterval(B.cd);$('bov').hidden=true;done=false;B.live=true;t0=Date.now();clearInterval(timer);timer=setInterval(tick,1000);tick();stats();awake(true);
+      say('¡Ya! Llega al centro ★','ok');tn(880,.3)}
+  },800);
+}
+async function bCreate(){
+  bLeave();reto=null;menu(false);
+  const l=lv<5?lv:0;lv=l;const sd=Math.floor(Math.random()*32768),code=AB[15+l]+AB[sd>>10&31]+AB[sd>>5&31]+AB[sd&31];
+  B={code,lv:l,seed:sd,n:bSize(l),role:0,round:0,online:false,st:[[0,0],[bSize(l)-1,bSize(l)-1]],c:[(bSize(l)-1)/2,(bSize(l)-1)/2]};
+  newGame();
+  bOv('Batalla creada',code,'Eres 🔵 Azul. Tu rival: ☰ Menú → ⚔️ Batalla → escribe el código y pulsa «Unirse». Esperando rival…'+bLink(),{go:'Jugar sin conexión',x:true});
+  const me=B;
+  try{
+    await loadPJ();if(B!==me)return;
+    B.peer=new Peer('lprimos-'+code);
+    B.peer.on('connection',cn=>{
+      if(B!==me||B.conn||B.live||!$('bt').textContent.startsWith('Batalla')){cn.on('open',()=>cn.close());return}
+      bWire(cn);cn.on('open',()=>{B.online=true;bSend({t:'go',round:B.round});newGame();bCount()});
+    });
+    B.peer.on('error',e=>{if(B===me&&!B.online&&!B.live)bOv('Batalla creada',code,'Eres 🔵 Azul. No hay conexión a internet, así que jugaréis sin conexión: tu rival se une con el código y contáis 3-2-1 juntos.',{go:'¡Empezar!',x:true})});
+  }catch(e){if(B===me)bOv('Batalla creada',code,'Eres 🔵 Azul. No hay conexión a internet, así que jugaréis sin conexión: tu rival se une con el código y contáis 3-2-1 juntos.',{go:'¡Empezar!',x:true})}
+}
+async function bJoin(r){
+  bLeave();reto=null;menu(false);lv=r.lv;const n=bSize(r.lv);
+  B={code:r.code,lv:r.lv,seed:r.seed,n,role:1,round:0,online:false,st:[[0,0],[n-1,n-1]],c:[(n-1)/2,(n-1)/2]};
+  newGame();
+  bOv('Conectando…',r.code,'Eres 🔴 Rojo. Buscando a tu rival…',{go:'Jugar sin conexión',x:true});
+  const me=B,to=setTimeout(()=>{if(B===me&&!B.online)bNet('No encuentro la batalla.')},10000);
+  try{
+    await loadPJ();if(B!==me)return;
+    B.peer=new Peer();
+    B.peer.on('open',()=>{if(B!==me)return;const cn=B.peer.connect('lprimos-'+B.code,{reliable:true});bWire(cn);
+      cn.on('open',()=>{if(B!==me||B.live){cn.close();return}clearTimeout(to);B.online=true;bOv('¡Conectado!','⚔️','Eres 🔴 Rojo. ¡Empieza la cuenta atrás!',{x:true})})});
+    B.peer.on('error',e=>{if(B!==me)return;clearTimeout(to);bNet(e&&e.type==='peer-unavailable'?'No encuentro esa batalla: revisa el código y que tu rival la tenga abierta.':'No hay conexión.')});
+  }catch(e){clearTimeout(to);bNet('No hay conexión a internet.')}
+}
+function bArrive(){
+  done=true;clearInterval(timer);tick();awake(false);B.live=false;B.my=Date.now()-t0;
+  bSend({t:'win',ms:B.my});bResult();
+}
+function bResult(){
+  const me=B.my,rv=B.rv,sec=x=>fmt(Math.round(x/1000));
+  if(me==null&&rv==null)return;
+  if(me==null){
+    done=true;clearInterval(timer);awake(false);B.live=false;
+    tn(220,.3,'triangle');tn(165,.4,'triangle',.2);
+    bOv('¡Ha ganado '+bName(1-B.role)+'!',sec(rv),'Ha llegado al centro antes que tú. ¿Revancha?',{rev:true,x:true});return;
+  }
+  if(!B.online&&rv==null){bOv('¡LLEGUÉ!',sec(me),'¡Levanta el móvil para que lo vea tu rival! Para la revancha, pulsad los dos «Revancha».',{rev:true,x:true});conf();[523,659,784,1047].forEach((f,i)=>tn(f,.3,'sine',i*.13));return}
+  if(rv==null||me<=rv){bOv('¡Has ganado!',sec(me),'Has llegado al centro antes que tu rival. '+bName(B.role)+' gana esta batalla.',{rev:true,x:true});conf();[523,659,784,1047].forEach((f,i)=>tn(f,.3,'sine',i*.13))}
+  else bOv('¡Por un pelo!',sec(me),'Tu rival llegó '+((me-rv)/1000).toFixed(1)+' s antes. ¿Revancha?',{rev:true,x:true});
+}
+function bRematch(){
+  B.round++;newGame();
+  if(B.online){bSend({t:'go',round:B.round});bCount()}
+  else bOv('Revancha','⚔️','Tu rival también tiene que pulsar «Revancha». Contad 3-2-1 juntos y pulsad «¡Empezar!».',{go:'¡Empezar!',x:true});
+}
+function bLeave(){
+  if(!B)return;
+  bSend({t:'bye'});clearInterval(B.cd);
+  try{if(B.conn)B.conn.close();if(B.peer)B.peer.destroy()}catch(e){}
+  B=null;$('bov').hidden=true;
+}
+$('mkB').onclick=bCreate;
+$('joinB').onclick=()=>startReto(readCode($('codeB').value));
+$('codeB').onkeydown=e=>{if(e.key==='Enter')$('joinB').click()};
+$('bgo').onclick=()=>{if(B){B.online=false;bCount()}};
+$('brev').onclick=bRematch;
+$('bx').onclick=()=>{bLeave();newGame()};
+function theme(){
+  const t=[['','🌓 Auto'],['light','☀️ Claro'],['dark','🌙 Oscuro']][S.th],d=document.documentElement;
+  t[0]?d.dataset.theme=t[0]:delete d.dataset.theme;$('th').textContent=t[1];
+  $('snd').textContent=S.snd?'🔊':'🔇';document.body.classList.toggle('big',!!S.big);
+}
+
+$('mode').onchange=()=>{bLeave();reto=null;newGame()};
+$('lvs').onchange=e=>{bLeave();reto=null;lv=+e.target.value;newGame()};
+$('hint').onclick=hint;
+const menu=o=>{$('menu').hidden=!o;$('menuB').setAttribute('aria-expanded',o);if(o)$('menuX').focus();else $('menuB').focus()};
+$('menuB').onclick=()=>menu(true);
+$('menuX').onclick=()=>menu(false);
+$('menu').onclick=e=>{if(e.target===$('menu'))menu(false)};
+$('undo').onclick=undo;
+$('help').onclick=()=>{const c=$('cheat');c.hidden=!c.hidden;$('help').textContent=c.hidden?'📋 Ver primos':'📋 Ocultar primos';menu(false);if(!c.hidden)c.scrollIntoView({block:'nearest'})};
+$('reset').onclick=()=>newGame(false);
+$('fresh').onclick=()=>{bLeave();reto=null;menu(false);newGame()};
+$('again').onclick=()=>{reto=null;newGame()};
+$('rep').onclick=()=>newGame(false);
+$('mkR').onclick=()=>{const l=lv<5?lv:0;startReto(readCode(mkCode(l,+$('mode').value,Math.floor(Math.random()*32768))),true)};
+$('joinR').onclick=()=>startReto(readCode($('codeIn').value));
+$('codeIn').onkeydown=e=>{if(e.key==='Enter')$('joinR').click()};
+$('cgo').onclick=()=>{$('cov').hidden=true;newGame(false)};
+let wipeT=null;
+$('wipe').onclick=()=>{
+  const b=$('wipe');
+  if(!wipeT){b.textContent='¿Seguro? Toca otra vez';wipeT=setTimeout(()=>{wipeT=null;b.textContent='🗑 Borrar progreso'},3000);return}
+  clearTimeout(wipeT);wipeT=null;b.textContent='🗑 Borrar progreso';
+  S.bs={};S.bt={};sv();
+  if(lv>0&&lv<5)newGame();else{renderLv();say('Progreso borrado: los niveles vuelven a estar bloqueados.')}
+};
+$('next').onclick=()=>{if(lv<4){lv++;newGame()}};
+$('look').onclick=()=>{$('ov').hidden=true};
+$('snd').onclick=()=>{S.snd=S.snd?0:1;theme();sv()};
+$('th').onclick=()=>{S.th=(S.th+1)%3;theme();sv()};
+$('bigb').onclick=()=>{S.big=S.big?0:1;theme();sv()};
+$('pgo').onclick=()=>{
+  const n=Math.min(10,Math.max(4,+$('pn').value||6)),m=Math.min(300,Math.max(20,+$('pm').value||60));
+  LV[5]={n,max:m,ln:.38,bi:.3,tr:.6,dc:.25};lv=5;bLeave();reto=null;menu(false);newGame();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('cov').hidden)$('cgo').click();else if(!$('menu').hidden)menu(false);else if(!$('ov').hidden)$('ov').hidden=true;return}
+  if(!$('menu').hidden)return;
+  const d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(!d||done||e.target.matches('input,select'))return;
+  e.preventDefault();
+  move(d);
+});
+function move(d){
+  const n=N,[r,c]=path[path.length-1],a=r+d[0],b=c+d[1];
+  if(a>=0&&b>=0&&a<n&&b<n)step(a,b);
+}
+let sx=0,sy=0,sw=false;
+bd.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;sw=false});
+bd.addEventListener('pointerup',e=>{
+  const dx=e.clientX-sx,dy=e.clientY-sy;
+  if(!done&&Math.max(Math.abs(dx),Math.abs(dy))>30){sw=true;move(Math.abs(dx)>Math.abs(dy)?[0,dx>0?1:-1]:[dy>0?1:-1,0])}
+});
+theme();{const h=readCode(location.hash.slice(1));if(h)startReto(h);else newGame()}
+</script>
+</body>
+</html>
